@@ -53,7 +53,7 @@ class ReflexCaptureAgent(CaptureAgent):
 
     def registerInitialState(self, gameState):
         CaptureAgent.registerInitialState(self, gameState)
-        self.treeDepth = 3
+        self.tree_depth = 1
 
     def chooseAction(self, gameState):
         """
@@ -128,106 +128,107 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     but it is by no means the best or only way to build an offensive agent.
     """
 
-    # def getAction(self, gameState):
-    #     opponents = {}
-    #     for enemy in self.getOpponents(gameState):
-    #         opponents[enemy] = gameState.getAgentState(enemy).getPosition()
-    #     directions = {'north': (0, 1), 'south': (0, -1), 'east': (1, 0), 'west': (-1, 0)}
-    #     ghost_weights = {'distance': 5, 'scared': 5}
-    #
-    #     def get_ghost_actions(current_pos):
-    #         walls = gameState.getWalls().asList()
-    #
-    #         max_x = max([wall[0] for wall in walls])
-    #         max_y = max([wall[1] for wall in walls])
-    #
-    #         actions = []
-    #         for direction in directions:
-    #             action = directions[direction]
-    #             new_pos = (int(current_pos[0] + action[0]), int(current_pos[1] + action[1]))
-    #             if new_pos not in walls:
-    #                 if (1 <= new_pos[0] < max_x) and (1 <= new_pos[1] < max_y):
-    #                     actions.append(direction.title())
-    #
-    #         return actions
-    #
-    #     def get_new_position(current_pos, action):
-    #         act = directions[action.lower()]
-    #         return current_pos[0] + act[0], current_pos[1] + act[1]
-    #
-    #     def expectation(gamestate, position, legalActions):
-    #         ghost_dict = {}
-    #         for action in legalActions:
-    #             newPos = get_new_position(position, action)
-    #             ghost_dict[action] = self.getMazeDistance(position, newPos) * ghost_weights['distance']
-    #         min_action = min(ghost_dict)
-    #         for action in ghost_dict:
-    #             if ghost_dict[action] == min_action:
-    #                 ghost_dict[action] = .8
-    #             else:
-    #                 ghost_dict[action] = .2 / len(legalActions)
-    #         return ghost_dict
-    #
-    #     def ghost_eval(gamestate, opponents, opponent):
-    #         newPos = opponents[opponent]
-    #         enemy = gamestate.getAgentState(opponent)
-    #         myPos = gamestate.getAgentState(self.index).getPosition()
-    #
-    #         if enemy.scaredTimer != 0:
-    #             distance = -self.getMazeDistance(myPos, newPos) * ghost_weights['distance']
-    #         else:
-    #             distance = self.getMazeDistance(myPos, newPos) * ghost_weights['distance']
-    #
-    #         return distance
-    #
-    #     def minimax(gamestate, depth, agent, opponents, alpha=-float('inf'), beta=float('inf')):
-    #         """
-    #         """
-    #         # Get legal moves per agent
-    #         legalActions = [action for action in gamestate.getLegalActions(self.index) if action != Directions.STOP]
-    #
-    #         # Generate optimal action recursively
-    #         actions = {}
-    #         if agent == self.index:
-    #             max_value = -float('inf')
-    #             for action in legalActions:
-    #                 eval = self.evaluate(gamestate, action)
-    #                 if depth == self.treeDepth:
-    #                     value = eval
-    #                 else:
-    #                     value = eval + minimax(self.getSuccessor(gamestate, action), depth, agent + 1, opponents, alpha,
-    #                                            beta)
-    #                 max_value = max(max_value, value)
-    #                 if beta < max_value:
-    #                     return max_value
-    #                 else:
-    #                     alpha = max(alpha, max_value)
-    #                 if depth == 1:
-    #                     actions[value] = action
-    #             if depth == 1:
-    #                 return actions[max_value]
-    #             return max_value
-    #         else:
-    #             min_value = float('inf')
-    #             for opponent in opponents:
-    #                 if gamestate.getAgentState(opponent).getPosition() is not None:
-    #                     legalActions = get_ghost_actions(opponents[opponent])
-    #                     expectations = expectation(gamestate, opponents[opponent], legalActions)
-    #                     for action in legalActions:
-    #                         new_opponents = opponents.copy()
-    #                         new_opponents[opponent] = get_new_position(opponents[opponent], action)
-    #                         ghost_val = ghost_eval(gamestate, new_opponents, opponent) * expectations[action]
-    #                         value = ghost_val + minimax(gamestate, depth + 1, self.index, new_opponents, alpha, beta)
-    #                         min_value = min(min_value, value)
-    #                         if min_value < alpha:
-    #                             return min_value
-    #                         else:
-    #                             beta = min(beta, min_value)
-    #             if min_value == float('inf'):
-    #                 return 0
-    #             return min_value
-    #
-    #     return minimax(gameState, 1, self.index, opponents)
+    def getAction(self, gameState):
+        opponents = {}
+        for enemy in self.getOpponents(gameState):
+            opponents[enemy] = gameState.getAgentState(enemy).getPosition()
+        directions = {'north': (0, 1), 'south': (0, -1), 'east': (1, 0), 'west': (-1, 0)}
+        ghost_weights = {'distance': 5, 'scared': 5}
+
+        def get_ghost_actions(current_pos):
+            walls = gameState.getWalls().asList()
+
+            max_x = max([wall[0] for wall in walls])
+            max_y = max([wall[1] for wall in walls])
+
+            actions = []
+            for direction in directions:
+                action = directions[direction]
+                new_pos = (int(current_pos[0] + action[0]), int(current_pos[1] + action[1]))
+                if new_pos not in walls:
+                    if (1 <= new_pos[0] < max_x) and (1 <= new_pos[1] < max_y):
+                        actions.append(direction.title())
+
+            return actions
+
+        def get_new_position(current_pos, action):
+            act = directions[action.lower()]
+            return current_pos[0] + act[0], current_pos[1] + act[1]
+
+        def expectation(gamestate, position, legalActions):
+            ghost_dict = {}
+            for action in legalActions:
+                newPos = get_new_position(position, action)
+                ghost_dict[action] = self.getMazeDistance(position, newPos) * ghost_weights['distance']
+            min_action = min(ghost_dict)
+            for action in ghost_dict:
+                if ghost_dict[action] == min_action:
+                    ghost_dict[action] = .8
+                else:
+                    ghost_dict[action] = .2 / len(legalActions)
+            return ghost_dict
+
+        def ghost_eval(gamestate, opponents, opponent):
+            newPos = opponents[opponent]
+            enemy = gamestate.getAgentState(opponent)
+            myPos = gamestate.getAgentState(self.index).getPosition()
+
+            if enemy.scaredTimer != 0:
+                distance = -self.getMazeDistance(myPos, newPos) * ghost_weights['distance']
+            else:
+                distance = self.getMazeDistance(myPos, newPos) * ghost_weights['distance']
+
+            return distance
+
+        def minimax(gamestate, depth, agent, opponents, alpha=-float('inf'), beta=float('inf')):
+            """
+            """
+            # Get legal moves per agent
+            legalActions = [action for action in gamestate.getLegalActions(self.index) if action != Directions.STOP]
+
+            # Generate optimal action recursively
+            actions = {}
+            if agent == self.index:
+                max_value = -float('inf')
+                for action in legalActions:
+                    eval = self.evaluate(gamestate, action)
+                    if depth == self.tree_depth:
+                        value = eval
+                    else:
+                        value = eval + minimax(self.getSuccessor(gamestate, action), depth, agent + 1, opponents, alpha,
+                                               beta)
+                    max_value = max(max_value, value)
+                    if beta < max_value:
+                        return max_value
+                    else:
+                        alpha = max(alpha, max_value)
+                    if depth == 1:
+                        actions[value] = action
+                if depth == 1:
+                    return actions[max_value]
+                return max_value
+            else:
+                min_value = float('inf')
+                # for opponent in opponents:
+                #     if gamestate.getAgentState(opponent).getPosition() is not None:
+                #         legalActions = get_ghost_actions(opponents[opponent])
+                #         expectations = expectation(gamestate, opponents[opponent], legalActions)
+                #         for action in legalActions:
+                #             new_opponents = opponents.copy()
+                #             new_opponents[opponent] = get_new_position(opponents[opponent], action)
+                #             ghost_val = ghost_eval(gamestate, new_opponents, opponent) * expectations[action]
+                #             value = ghost_val + minimax(gamestate, depth + 1, self.index, new_opponents, alpha, beta)
+                #             min_value = min(min_value, value)
+                #             if min_value < alpha:
+                #                 return min_value
+                #             else:
+                #                 beta = min(beta, min_value)
+                min_value = minimax(gamestate, depth + 1, self.index, opponents, alpha, beta)
+                if min_value == float('inf'):
+                    return 0
+                return min_value
+
+        return minimax(gameState, 1, self.index, opponents)
 
     def getFeatures(self, gameState, action):
         features = util.Counter()
