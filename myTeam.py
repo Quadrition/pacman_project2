@@ -53,7 +53,7 @@ class ReflexCaptureAgent(CaptureAgent):
 
     def registerInitialState(self, gameState):
         CaptureAgent.registerInitialState(self, gameState)
-        self.tree_depth = 1
+        self.tree_depth = 2
 
     def chooseAction(self, gameState):
         """
@@ -96,15 +96,15 @@ class ReflexCaptureAgent(CaptureAgent):
         else:
             return successor
 
-    def evaluate(self, gameState, action):
+    def evaluate(self, gameState, action, no_back=True):
         """
         Computes a linear combination of features and feature weights
         """
-        features = self.getFeatures(gameState, action)
+        features = self.getFeatures(gameState, action, no_back=no_back)
         weights = self.getWeights(gameState, action)
         return features * weights
 
-    def getFeatures(self, gameState, action):
+    def getFeatures(self, gameState, action, no_back=True):
         """
         Returns a counter of features for the state
         """
@@ -180,30 +180,36 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
 
             return distance
 
-        def minimax(gamestate, depth, agent, opponents, alpha=-float('inf'), beta=float('inf')):
+        def minimax(gamestate, depth, agent, opponents, no_back, alpha=-float('inf'), beta=float('inf')):
             """
             """
             # Get legal moves per agent
             legalActions = [action for action in gamestate.getLegalActions(self.index) if action != Directions.STOP]
+
+            #if gameState.getAgentState(self.index).numCarrying > 0:
+            #     no_back = True
 
             # Generate optimal action recursively
             actions = {}
             if agent == self.index:
                 max_value = -float('inf')
                 for action in legalActions:
-                    eval = self.evaluate(gamestate, action)
+                    eval = self.evaluate(gamestate, action, no_back)
                     if depth == self.tree_depth:
                         value = eval
                     else:
-                        value = eval + minimax(self.getSuccessor(gamestate, action), depth, agent + 1, opponents, alpha,
-                                               beta)
+                        value = eval + minimax(self.getSuccessor(gamestate, action), depth + 1, agent, opponents,
+                                               False, alpha, beta)
                     max_value = max(max_value, value)
                     if beta < max_value:
                         return max_value
                     else:
                         alpha = max(alpha, max_value)
                     if depth == 1:
-                        actions[value] = action
+                        if value in actions.keys():
+                            actions[value] = random.choice([action, actions[value]])
+                        else:
+                            actions[value] = action
                 if depth == 1:
                     return actions[max_value]
                 return max_value
@@ -228,9 +234,10 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
                     return 0
                 return min_value
 
-        return minimax(gameState, 1, self.index, opponents)
+        x = minimax(gameState, 1, self.index, opponents, True)
+        return x
 
-    def getFeatures(self, gameState, action):
+    def getFeatures(self, gameState, action, no_back=True):
         features = util.Counter()
         successor = self.getSuccessor(gameState, action)
         foodList = self.getFood(successor).asList()
@@ -259,7 +266,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
             if regular_value < 6 and 12 <= myPos[0] <= 15:
                 features['otherWay'] = myPos[0]
 
-        if gameState.getAgentState(self.index).numCarrying == myState.numCarrying > 0:
+        if gameState.getAgentState(self.index).numCarrying == myState.numCarrying > 0 and no_back:
             start_distance = self.getMazeDistance((1, 1) if self.red else (30, 15), myPos) - 20
             features['goStart'] = start_distance * myState.numCarrying
 
@@ -281,7 +288,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
         return features
 
     def getWeights(self, gameState, action):
-        return {'successorScore': 100, 'distanceToFood': -1, 'goStart': -2, 'distanceToGhost': 1, 'ghostScared': -1.5, 'otherWay': -1, 'numCarrying': 10, 'foodRemaining': -1, 'stop': -100, 'distanceToCapsules': -0.5}
+        return {'successorScore': 100, 'distanceToFood': -1.2, 'goStart': -2, 'distanceToGhost': 1, 'ghostScared': -1.5, 'otherWay': -1, 'numCarrying': 10, 'foodRemaining': -1, 'stop': -100, 'distanceToCapsules': -0.5}
 
 
 class DefensiveReflexAgent(ReflexCaptureAgent):
@@ -292,7 +299,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
     such an agent.
     """
 
-    def getFeatures(self, gameState, action):
+    def getFeatures(self, gameState, action, no_back=True):
         features = util.Counter()
         successor = self.getSuccessor(gameState, action)
 
